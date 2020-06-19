@@ -3,13 +3,13 @@
 # Written by Michael McMahon - 26250912
 # For COMP 472 Section – Summer 2020
 # --------------------------------------------------------
-from typing import Tuple, List, Set, Dict
+from typing import Tuple, List, Set
 
 import pandas as pd
 import os
 import time as t
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import classification_report
 from src.HackerNewsNaiveBayesClassifier import HackerNewsNaiveBayesClassifier
 
 
@@ -34,7 +34,7 @@ def create_stop_word_set(file_name: str) -> Set[str]:
 
 
 start_time = t.time()
-data_set_file_name = '../data/hns_2018_2019.csv'
+data_set_file_name = '../data/test.csv'
 classifier = HackerNewsNaiveBayesClassifier(data_set_file_name)
 
 data_sets: Tuple[pd.DataFrame, pd.DataFrame] = classifier.split_data_set()
@@ -59,6 +59,7 @@ model = classifier.train(vocabulary)
 classifier.save_model(model, '../results/model-2018.txt')
 base_line_model_results = classifier.classify_testing_data(model, testing_data, total_class_samples)
 classifier.save_model_results(base_line_model_results, '../results/baseline-results.txt')
+
 # stop-word filtering experiment
 vocabulary, removed_words, total_class_samples = classifier.create_vocabulary(training_data,
                                                                               stopwords=stop_words)
@@ -69,6 +70,7 @@ model = classifier.train(vocabulary)
 classifier.save_model(model, '../results/stopword-model.txt')
 stop_word_model_results = classifier.classify_testing_data(model, testing_data, total_class_samples)
 classifier.save_model_results(stop_word_model_results, '../results/stopword-results.txt')
+
 # word length filtering experiment
 vocabulary, removed_words, total_class_samples = classifier.create_vocabulary(training_data,
                                                                               cap_word_length=True)
@@ -265,7 +267,6 @@ ax2.plot(f_percentage_vocabulary_sizes, f_percentage_recall, 'tab:pink', linewid
 ax2.plot(f_percentage_vocabulary_sizes, f_percentage_f1_score, 'tab:red', linewidth=2)
 ax2.set_title('Top x frequency percentage removed')
 ax2.set(xlabel='vocabulary', ylabel='performance')
-ax2.label_outer()
 ax2.legend(labels=["Accuracy", "Precision", "Recall", "F1 Measure"], loc="upper right")
 
 plt.show()
