@@ -1,7 +1,7 @@
 # -------------------------------------------------------
 # Assignment 2
 # Written by Michael McMahon - 26250912
-# For COMP 472 Section – Summer 2020
+# For COMP 472 Section ABJX – Summer 2020
 # --------------------------------------------------------
 from typing import Tuple, List, Set
 
@@ -13,6 +13,7 @@ from sklearn.metrics import classification_report
 from src.HackerNewsNaiveBayesClassifier import HackerNewsNaiveBayesClassifier
 
 
+# use to save vocabulary and removed words
 def save_data(data: List[str], file_name: str) -> None:
     if os.path.exists(file_name):
         os.remove(file_name)
@@ -22,6 +23,7 @@ def save_data(data: List[str], file_name: str) -> None:
             writer.write(f"{word}\n")
 
 
+# creates a set of stopwords form the given file.
 def create_stop_word_set(file_name: str) -> Set[str]:
     stop_words: Set[str] = set()
 
@@ -34,13 +36,18 @@ def create_stop_word_set(file_name: str) -> Set[str]:
 
 
 start_time = t.time()
-data_set_file_name = '../data/test.csv'
+
+# create navie bayes classifier specific to the hacker news data set
+data_set_file_name = '../data/hns_2018_2019.csv'
 classifier = HackerNewsNaiveBayesClassifier(data_set_file_name)
 
+# split data set
 data_sets: Tuple[pd.DataFrame, pd.DataFrame] = classifier.split_data_set()
 training_data, testing_data = data_sets
+
 stop_words = create_stop_word_set('../data/stopwords.txt')
 
+# get the possible labeled classes
 post_types = classifier.get_classes()
 
 ##########################################
