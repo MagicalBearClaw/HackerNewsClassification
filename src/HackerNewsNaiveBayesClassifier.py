@@ -5,8 +5,7 @@
 # -------------------------------------------------------
 import math
 import operator
-from typing import Dict, Set
-
+from typing import Dict, Set, Match
 import pandas as pd
 import os
 from nltk.tokenize import RegexpTokenizer
@@ -17,9 +16,12 @@ class HackerNewsNaiveBayesClassifier:
         self._data_frame = pd.read_csv(file_name)
         self._classes = self._data_frame["Post Type"].unique()
         self._tokenizer = RegexpTokenizer("[\w']+")
-        self._removal_tokenizer = RegexpTokenizer('[^\w]|[| \d]+')
-        self._space_tokenizer = RegexpTokenizer('[^\s]+')
+        self._removal_regex = "([\!\[\]()`~@#$%^&*{};:\",\-\+=<.>\/?]|\d+)"
+        self._removal_tokenizer = RegexpTokenizer(self._removal_regex)
         self._default_class_count_dict = self.__create_default_class_count_dict()
+
+    def get_classes(self):
+        return self._classes.copy()
 
     def __create_default_class_count_dict(self) -> Dict[str, int]:
         class_count_dict: Dict[str, int] = dict()
@@ -38,7 +40,8 @@ class HackerNewsNaiveBayesClassifier:
                 line = f"{current_index}  {index}"
                 for clazz in self._classes:
                     class_prob = f"{clazz}_prob"
-                    line += f"  {row[clazz]}  {row[class_prob]}"
+                    formatted_class_prob = "{:20.16f}".format(row[class_prob])
+                    line += f"  {row[clazz]}  {formatted_class_prob}"
                 current_index += 1
                 writer.write(f"{line}\n")
 
@@ -66,28 +69,25 @@ class HackerNewsNaiveBayesClassifier:
         removed_words: set = set()
         vocabulary: Dict[str, Dict[str, int]] = dict()
         total_class_samples = dict()
-        total_class_words = dict()
 
         for index, row in data.iterrows():
             row['Title'] = row['Title'].lower()
             words = self._tokenizer.tokenize(row["Title"])
-            words_to_remove = self._removal_tokenizer.tokenize(row["Title"])
-
+            words_to_remove = self._removal_tokenizer.tokenize(row['Title'])
             post_type = row["Post Type"]
+
             if post_type not in total_class_samples:
                 total_class_samples[post_type] = 0
 
             total_class_samples[post_type] += 1
 
             for word in words_to_remove:
-                separated_words = self._space_tokenizer.tokenize(word)
-                for w in separated_words:
-                    w = w.strip()
-                    if w not in removed_words:
-                        removed_words.add(w)
+                if word not in removed_words:
+                    removed_words.add(word)
 
             for word in words:
                 word = word.strip()
+
                 if word in removed_words:
                     continue
 
@@ -102,30 +102,26 @@ class HackerNewsNaiveBayesClassifier:
 
                 if word not in vocabulary:
                     vocabulary[word] = self._default_class_count_dict.copy()
-                    total_class_words[post_type] = 0
 
                 freq_dic = vocabulary[word]
                 freq_dic[post_type] += 1
-                total_class_words[post_type] += 1
 
-        return vocabulary, removed_words, total_class_samples, total_class_words
+        return vocabulary, removed_words, total_class_samples
 
-    def train(self, vocabulary_frequencies: Dict[str, Dict[str, int]],
-              total_class_words: Dict[str, int], smoothing: float = 0.5) -> pd.DataFrame:
+    def train(self, vocabulary_frequencies: Dict[str, Dict[str, int]], smoothing: float = 0.5) -> pd.DataFrame:
 
         model = pd.DataFrame.from_dict(vocabulary_frequencies).T
         model.sort_index(inplace=True)
-        model[self._classes] += smoothing
 
         for index, row in model.iterrows():
             for clazz in self._classes:
-                probability = row[clazz] / (total_class_words[clazz] + (smoothing * model.size))
+                probability = (row[clazz] + smoothing) / (model[clazz].sum() + (smoothing * model.index.size))
                 new_class = f"{clazz}_prob"
 
                 if new_class not in model.columns:
                     model[new_class] = 0.0
 
-                model.at[index, new_class] = math.log10(probability)
+                model.at[index, new_class] = probability
 
         return model
 
@@ -141,25 +137,23 @@ class HackerNewsNaiveBayesClassifier:
             class_scores = dict()
             row['Title'] = row['Title'].lower()
             words = self._tokenizer.tokenize(row["Title"])
-            words_to_remove = self._removal_tokenizer.tokenize(row["Title"])
+            words_to_remove = self._removal_tokenizer.tokenize(row['Title'])
             removed_words: set = set()
 
             for word in words_to_remove:
-                separated_words = self._space_tokenizer.tokenize(word)
-                for w in separated_words:
-                    w = w.strip()
-                    if w not in removed_words:
-                        removed_words.add(w)
+                if word not in removed_words:
+                    removed_words.add(word)
 
             for word in words:
                 word = word.strip()
+
                 if word in removed_words:
                     continue
 
                 for clazz in self._classes:
                     score = 0
                     if word in model.index:
-                        score = model.at[word, f"{clazz}_prob"]
+                        score = math.log10(model.at[word, f"{clazz}_prob"])
 
                     if clazz not in class_scores:
                         class_scores[clazz] = 0
@@ -198,3 +192,16 @@ class HackerNewsNaiveBayesClassifier:
 
         results = pd.DataFrame(result_data, columns=columns)
         return results
+
+    def remove_words_by_frequency_percentage(self, model: pd.DataFrame,
+                                             max_frequency_percentage: float) -> pd.DataFrame:
+        for index, row in model.iterrows():
+            frequency = 0
+            for clazz in self._classes:
+                frequency += row[f"{clazz}"]
+            model.at[index, "frequency"] = frequency
+        model.sort_values(by=['frequency'], ascending=False, inplace=True)
+        size = model.index.size
+        num_of_rows_to_skip = math.ceil(max_frequency_percentage * size)
+        tail_amount = size - num_of_rows_to_skip - 1
+        return model.tail(tail_amount)
