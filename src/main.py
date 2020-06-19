@@ -64,6 +64,7 @@ save_data(removed_words, '../results/baseline-removed_words.txt')
 
 model = classifier.train(vocabulary)
 classifier.save_model(model, '../results/model-2018.txt')
+baseline_model_vocabulary_size = model.index.size
 base_line_model_results = classifier.classify_testing_data(model, testing_data, total_class_samples)
 classifier.save_model_results(base_line_model_results, '../results/baseline-results.txt')
 
@@ -213,6 +214,8 @@ def create_metrics(given_model: pd.DataFrame) -> Tuple[float, float, float, floa
            report['macro avg']['f1-score']
 
 
+baseline_model_metric = create_metrics(base_line_model_results)
+
 # frequency <= max frequency metrics
 f_num_1_metrics = create_metrics(freq_num_1_model_results)
 f_num_5_metrics = create_metrics(freq_num_5_model_results)
@@ -220,35 +223,45 @@ f_num_10_metrics = create_metrics(freq_num_10_model_results)
 f_num_15_metrics = create_metrics(freq_num_15_model_results)
 f_num_20_metrics = create_metrics(freq_num_20_model_results)
 
-f_num_vocabulary_size = [freq_num_1_vocab_size, freq_num_5_vocab_size, freq_num_10_vocab_size, freq_num_15_vocab_size,
-                         freq_num_20_vocab_size]
 
-f_num_accuracies = [f_num_1_metrics[0], f_num_5_metrics[0], f_num_10_metrics[0], f_num_15_metrics[0],
-                    f_num_20_metrics[0]]
+def create_list_sorted_freq_tuples():
+    lists = list()
+    for i in range(4):
+        freq_num_list_tuples = list()
+        freq_num_list_tuples.append((baseline_model_vocabulary_size, baseline_model_metric[i]))
+        freq_num_list_tuples.append((freq_num_1_vocab_size, f_num_1_metrics[i]))
+        freq_num_list_tuples.append((freq_num_5_vocab_size, baseline_model_metric[i]))
+        freq_num_list_tuples.append((freq_num_10_vocab_size, f_num_5_metrics[i]))
+        freq_num_list_tuples.append((freq_num_15_vocab_size, f_num_10_metrics[i]))
+        freq_num_list_tuples.append((freq_num_20_vocab_size, f_num_15_metrics[i]))
+        freq_num_list_tuples = sorted(freq_num_list_tuples, key=lambda tup: tup[0])
+        lists.append(freq_num_list_tuples)
 
-f_num_precisions = [f_num_1_metrics[1], f_num_5_metrics[1], f_num_10_metrics[1], f_num_15_metrics[1],
-                    f_num_20_metrics[1]]
+    return lists
 
-f_num_recall = [f_num_1_metrics[2], f_num_5_metrics[2], f_num_10_metrics[2], f_num_15_metrics[2],
-                f_num_20_metrics[2]]
 
-f_num_f1_score = [f_num_1_metrics[3], f_num_5_metrics[3], f_num_10_metrics[3], f_num_15_metrics[3],
-                  f_num_20_metrics[3]]
+sorted_lists = create_list_sorted_freq_tuples()
 
-ax1.plot(f_num_vocabulary_size, f_num_accuracies, 'tab:cyan', linewidth=2)
-ax1.plot(f_num_vocabulary_size, f_num_precisions, 'tab:green', linewidth=2)
-ax1.plot(f_num_vocabulary_size, f_num_recall, 'tab:pink', linewidth=2)
-ax1.plot(f_num_vocabulary_size, f_num_f1_score, 'tab:red', linewidth=2)
+f_num_vocabulary_size = [i[0] for i in sorted_lists[0]]
+
+f_num_accuracies = [i[1] for i in sorted_lists[0]]
+
+f_num_precisions = [i[1] for i in sorted_lists[1]]
+
+f_num_recall = [i[1] for i in sorted_lists[2]]
+
+f_num_f1_score = [i[1] for i in sorted_lists[3]]
+
+ax1.plot(f_num_vocabulary_size, f_num_accuracies, 'tab:cyan', linewidth=2, marker='o')
+ax1.plot(f_num_vocabulary_size, f_num_precisions, 'tab:green', linewidth=2, marker='o')
+ax1.plot(f_num_vocabulary_size, f_num_recall, 'tab:pink', linewidth=2, marker='o')
+ax1.plot(f_num_vocabulary_size, f_num_f1_score, 'tab:red', linewidth=2, marker='o')
 ax1.set_title('Word frequency <= max frequency')
 ax1.set(xlabel='vocabulary', ylabel='performance')
 ax1.label_outer()
 ax1.legend(labels=["Accuracy", "Precision", "Recall", "F1 Measure"], loc="upper right")
+
 # top % frequencies removed
-f_percentage_vocabulary_sizes = [freq_percentage_model.index.size - freq_percentage_5_model.index.size,
-                                 freq_percentage_model.index.size - freq_percentage_10_model.index.size,
-                                 freq_percentage_model.index.size - freq_percentage_15_model.index.size,
-                                 freq_percentage_model.index.size - freq_percentage_20_model.index.size,
-                                 freq_percentage_model.index.size - freq_percentage_25_model.index.size]
 
 f_percentage_5_metrics = create_metrics(freq_percentage_5_model_results)
 f_percentage_10_metrics = create_metrics(freq_percentage_10_model_results)
@@ -256,22 +269,45 @@ f_percentage_15_metrics = create_metrics(freq_percentage_15_model_results)
 f_percentage_20_metrics = create_metrics(freq_percentage_20_model_results)
 f_percentage_25_metrics = create_metrics(freq_percentage_25_model_results)
 
-f_percentage_accuracies = [f_percentage_5_metrics[0], f_percentage_10_metrics[0], f_percentage_15_metrics[0],
-                           f_percentage_20_metrics[0], f_percentage_25_metrics[0]]
 
-f_percentage_precisions = [f_percentage_5_metrics[1], f_percentage_10_metrics[1], f_percentage_15_metrics[1],
-                           f_percentage_20_metrics[1], f_percentage_25_metrics[1]]
+def create_list_sorted_freq_percentage_tuples():
+    lists = list()
+    for i in range(4):
+        freq_list_tuples = list()
+        freq_list_tuples.append((baseline_model_vocabulary_size, baseline_model_metric[i]))
+        freq_list_tuples.append((freq_percentage_model.index.size - freq_percentage_25_model.index.size,
+                                 f_percentage_25_metrics[i]))
+        freq_list_tuples.append((freq_percentage_model.index.size - freq_percentage_20_model.index.size,
+                                 f_percentage_20_metrics[i]))
+        freq_list_tuples.append((freq_percentage_model.index.size - freq_percentage_15_model.index.size,
+                                 f_percentage_15_metrics[i]))
+        freq_list_tuples.append((freq_percentage_model.index.size - freq_percentage_10_model.index.size,
+                                 f_percentage_10_metrics[i]))
+        freq_list_tuples.append((freq_percentage_model.index.size - freq_percentage_5_model.index.size,
+                                 f_percentage_5_metrics[i]))
 
-f_percentage_recall = [f_percentage_5_metrics[2], f_percentage_10_metrics[2], f_percentage_15_metrics[2],
-                       f_percentage_20_metrics[2], f_percentage_25_metrics[2]]
+        freq_num_list_tuples = sorted(freq_list_tuples, key=lambda tup: tup[0])
+        lists.append(freq_num_list_tuples)
 
-f_percentage_f1_score = [f_percentage_5_metrics[3], f_percentage_10_metrics[3], f_percentage_15_metrics[3],
-                         f_percentage_20_metrics[3], f_percentage_25_metrics[3]]
+    return lists
 
-ax2.plot(f_percentage_vocabulary_sizes, f_percentage_accuracies, 'tab:cyan', linewidth=2)
-ax2.plot(f_percentage_vocabulary_sizes, f_percentage_precisions, 'tab:green', linewidth=2)
-ax2.plot(f_percentage_vocabulary_sizes, f_percentage_recall, 'tab:pink', linewidth=2)
-ax2.plot(f_percentage_vocabulary_sizes, f_percentage_f1_score, 'tab:red', linewidth=2)
+
+f_percentage_sorted_list = create_list_sorted_freq_percentage_tuples()
+
+f_percentage_vocabulary_sizes = [i[0] for i in f_percentage_sorted_list[0]]
+
+f_percentage_accuracies = [i[1] for i in f_percentage_sorted_list[0]]
+
+f_percentage_precisions = [i[1] for i in f_percentage_sorted_list[1]]
+
+f_percentage_recall = [i[1] for i in f_percentage_sorted_list[2]]
+
+f_percentage_f1_score = [i[1] for i in f_percentage_sorted_list[3]]
+
+ax2.plot(f_percentage_vocabulary_sizes, f_percentage_accuracies, 'tab:cyan', linewidth=2, marker='o')
+ax2.plot(f_percentage_vocabulary_sizes, f_percentage_precisions, 'tab:green', linewidth=2, marker='o')
+ax2.plot(f_percentage_vocabulary_sizes, f_percentage_recall, 'tab:pink', linewidth=2, marker='o')
+ax2.plot(f_percentage_vocabulary_sizes, f_percentage_f1_score, 'tab:red', linewidth=2, marker='o')
 ax2.set_title('Top x frequency percentage removed')
 ax2.set(xlabel='vocabulary', ylabel='performance')
 ax2.legend(labels=["Accuracy", "Precision", "Recall", "F1 Measure"], loc="upper right")
