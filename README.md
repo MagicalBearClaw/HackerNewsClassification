@@ -43,14 +43,14 @@ the 2019 data is tested against the model.
 the files with '-results' in the filename contain the results of the classifications for a given 
 experiment.
 
-## test files
+## Test files
 test.csv is a subset of hns_2018-2019.csv it contains 200 rows of even data. This was use during development because
 of iteration speeds.
 
 hns_2018-2019.csv is the full data set comprising of 10 000 rows
 
 
-# sample output
+# Sample output
 
 ![ScreenShot 1](images/screen_shot_1.png?raw=true)
 
