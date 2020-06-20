@@ -126,41 +126,41 @@ vocabulary, _, total_class_samples = classifier.create_vocabulary(training_data)
 # frequency = 1 model
 model = classifier.train(vocabulary)
 model = create_row_frequency(model, post_types)
-removed_words_model = model[~(model["total frequency"] == 1)]
-
-freq_num_1_vocab_size = removed_words_model.index.size
-freq_num_1_model_results = classifier.classify_testing_data(model[model["total frequency"] > 1], testing_data,
+freq_num_1_model = model[model["total frequency"] > 1]
+freq_num_1_model_size = freq_num_1_model.index.size
+freq_num_1_model_results = classifier.classify_testing_data(freq_num_1_model, testing_data,
                                                             total_class_samples)
+
 # frequency <= 5 model
 model = classifier.train(vocabulary)
 model = create_row_frequency(model, post_types)
-removed_words_model = model[~(model["total frequency"] <= 5)]
-freq_num_5_vocab_size = removed_words_model.index.size
-freq_num_5_model_results = classifier.classify_testing_data(model[model["total frequency"] > 5], testing_data,
+freq_num_5_model = model[model["total frequency"] > 5]
+freq_num_5_model_size = freq_num_5_model.index.size
+freq_num_5_model_results = classifier.classify_testing_data(freq_num_5_model, testing_data,
                                                             total_class_samples)
 
 # frequency <= 10 model
 model = classifier.train(vocabulary)
 model = create_row_frequency(model, post_types)
-removed_words_model = model[~(model["total frequency"] <= 10)]
-freq_num_10_vocab_size = removed_words_model.index.size
-freq_num_10_model_results = classifier.classify_testing_data(model[model["total frequency"] > 10], testing_data,
+freq_num_10_model = model[model["total frequency"] > 10]
+freq_num_10_model_size = freq_num_10_model.index.size
+freq_num_10_model_results = classifier.classify_testing_data(freq_num_10_model, testing_data,
                                                              total_class_samples)
 
 # frequency <= 15 model
 model = classifier.train(vocabulary)
 model = create_row_frequency(model, post_types)
-removed_words_model = model[~(model["total frequency"] <= 15)]
-freq_num_15_vocab_size = removed_words_model.index.size
-freq_num_15_model_results = classifier.classify_testing_data(model[model["total frequency"] > 15], testing_data,
+freq_num_15_model = model[model["total frequency"] > 15]
+freq_num_15_model_size = freq_num_15_model.index.size
+freq_num_15_model_results = classifier.classify_testing_data(freq_num_15_model, testing_data,
                                                              total_class_samples)
 
 # frequency <= 20 model
 model = classifier.train(vocabulary)
 model = create_row_frequency(model, post_types)
-removed_words_model = model[~(model["total frequency"] <= 20)]
-freq_num_20_vocab_size = removed_words_model.index.size
-freq_num_20_model_results = classifier.classify_testing_data(model[model["total frequency"] > 20], testing_data,
+freq_num_20_model = model[model["total frequency"] > 20]
+freq_num_20_model_size = freq_num_20_model.index.size
+freq_num_20_model_results = classifier.classify_testing_data(freq_num_20_model, testing_data,
                                                              total_class_samples)
 
 ##########################################
@@ -229,11 +229,11 @@ def create_list_sorted_freq_tuples():
     for i in range(4):
         freq_num_list_tuples = list()
         freq_num_list_tuples.append((baseline_model_vocabulary_size, baseline_model_metric[i]))
-        freq_num_list_tuples.append((freq_num_1_vocab_size, f_num_1_metrics[i]))
-        freq_num_list_tuples.append((freq_num_5_vocab_size, baseline_model_metric[i]))
-        freq_num_list_tuples.append((freq_num_10_vocab_size, f_num_5_metrics[i]))
-        freq_num_list_tuples.append((freq_num_15_vocab_size, f_num_10_metrics[i]))
-        freq_num_list_tuples.append((freq_num_20_vocab_size, f_num_15_metrics[i]))
+        freq_num_list_tuples.append((freq_num_1_model_size, f_num_1_metrics[i]))
+        freq_num_list_tuples.append((freq_num_5_model_size, baseline_model_metric[i]))
+        freq_num_list_tuples.append((freq_num_10_model_size, f_num_5_metrics[i]))
+        freq_num_list_tuples.append((freq_num_15_model_size, f_num_10_metrics[i]))
+        freq_num_list_tuples.append((freq_num_20_model_size, f_num_15_metrics[i]))
         freq_num_list_tuples = sorted(freq_num_list_tuples, key=lambda tup: tup[0])
         lists.append(freq_num_list_tuples)
 
